@@ -98,7 +98,7 @@ def ingest_files(files_to_ingest=None):
                 continue
 
             # Векторизация текста
-            file_embedding = embeddings.embed_text(text)
+            file_embedding = embeddings.embed_text(text[:2000])
 
             # Поиск похожих документов в векторной базе
             search_results = rag.search_vector(file_embedding, top_k=5)
@@ -109,12 +109,10 @@ def ingest_files(files_to_ingest=None):
                 llm_response = 'Нет'
             
             else:
-                prompt = (
-                    f"Есть ли в приведённых документах текст, противоречащий следующему новому тексту?\n\n"
-                    f"НОВЫЙ ТЕКСТ:\n{text}\n\nСУЩЕСТВУЮЩИЕ ТЕКСТЫ:\n{context}\n\nОтветь 'Да' или 'Нет'."
-                )
+                contradiction_query = "Есть ли в приведённых документах текст, противоречащий следующему новому тексту? Ответь 'Да' или 'Нет'."
+                contradiction_context = f"НОВЫЙ ТЕКСТ:\n{text}\n\nСУЩЕСТВУЮЩИЕ ТЕКСТЫ:\n{context}"
     
-                llm_response = rag.generate_answer(prompt)
+                llm_response = rag.generate_answer(contradiction_query, contradiction_context)
 
             if 'да' in llm_response.lower():
                 contradictions_detected.append(file_path)

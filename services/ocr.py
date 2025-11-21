@@ -167,3 +167,45 @@ class YandexOCRProcessor:
         print(f"✓ Успешно обработано файлов: {len(processed_files)}/{len(all_files)}")
         return processed_files
 
+
+def process_single_file_formatted(self, file_path: str, output_folder: str) -> List[Dict]:
+        """Обработка одного конкретного файла с сохранением результата"""
+        os.makedirs(output_folder, exist_ok=True)
+        
+        print(f"\n{'='*60}")
+        print(f"📄 Обработка одиночного файла: {file_path}")
+
+        try:
+            text = self.process_file(file_path)
+
+            if text is None or len(text.strip()) == 0:
+                print(f"⚠️  Файл пуст или не распознан")
+                return []
+
+            try:
+                text = self.clear_text(text)
+            except Exception as e:
+                print(f"✗ Ошибка очистки текста: {e}")
+                return []
+
+            filename = Path(file_path).stem
+            text_file_path = os.path.join(
+                output_folder,
+                f"{filename}.txt"
+            )
+
+            with open(text_file_path, 'w', encoding='utf-8') as f:
+                f.write(text)
+
+            print(f"✓ Текст сохранён: {text_file_path}")
+
+            # Возвращаем список из одного элемента, чтобы совместимо с create_knowledge_base
+            return [{
+                'original_file': file_path,
+                'text_file': text_file_path,
+                'text': text
+            }]
+
+        except Exception as e:
+            print(f"✗ Критическая ошибка при обработке файла: {e}")
+            return []
