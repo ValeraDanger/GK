@@ -11,7 +11,7 @@ log = get_logger("[AskScript]")
 def answer_query(
     question: str,
     top_k: int = 5,
-) -> str:
+) -> dict:
     log.info(f"Processing question: {question}")
 
     embeddings = CloudRuEmbeddings(api_key=CLOUD_API_KEY, base_url=CLOUD_RU_URL)
@@ -28,4 +28,16 @@ def answer_query(
     answer, results = rag.rag(question, top_k=top_k)
 
     log.info("Answer generated successfully")
-    return answer
+    
+    # Формируем список источников с цитатами
+    sources = []
+    for r in results:
+        sources.append({
+            "source": r.metadata.get('source', 'unknown'),
+            "content": r.content
+        })
+        
+    return {
+        "answer": answer,
+        "sources": sources
+    }
