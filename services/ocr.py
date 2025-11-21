@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 from typing import List, Dict
+import re
 
 import grpc
 
@@ -18,6 +19,23 @@ class YandexOCRProcessor:
         sys.path.append('/app/yc-vision-ocr-recognizer/src')
         import async_ocr_client
         self.ocr_client = async_ocr_client
+
+    def clear_text(self, text: str) -> str:
+        if not text:
+            return ""
+
+        text = text.replace('\n', ' ').replace('\t', ' ').replace('\r', ' ')
+
+        text = text.replace('┌', '').replace('┐', '')
+        text = text.replace('\\', '')
+        
+        text = re.sub(r'\s+', ' ', text)
+
+        # \u200B - zero width space, \u200E - left-to-right mark, \u200F - right-to-left mark
+        text = re.sub(r'[\u200B\u200E\u200F]', '', text)
+
+        text = text.strip()
+        return text
 
     def wait_for_operation(self, operation_id: str, max_retries: int = MAX_RETRIES,
                           delay: int = RETRY_DELAY):
@@ -118,6 +136,12 @@ class YandexOCRProcessor:
                     print(f"⚠️  Пропускаем файл (нет текста)")
                     continue
 
+                try:
+                    text = self.clear_text(text)
+                except Exception as e:
+                    print(f"✗ Ошибка при удалении символов в тексте ocr: {type(e).__name__}: {e}")
+                    return None
+
                 filename = Path(file_path).stem
                 text_file_path = os.path.join(
                     output_folder,
@@ -142,3 +166,4 @@ class YandexOCRProcessor:
         print(f"\n{'='*60}")
         print(f"✓ Успешно обработано файлов: {len(processed_files)}/{len(all_files)}")
         return processed_files
+

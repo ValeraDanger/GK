@@ -36,3 +36,9 @@ class CloudRuEmbeddings(Embeddings):
             input=[text.strip()]
         )
         return response.data[0].embedding
+
+    def embed_text(self, text: str) -> List[float]:
+        """
+        Эмбеддинг одного текста (синоним для embed_query)
+        """
+        return self.embed_query(text)
